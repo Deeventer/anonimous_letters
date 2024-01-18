@@ -1,8 +1,8 @@
 # БИБЛИОТЕКА ИМПОРТОВ
-import sqlite3
-
 from aiogram.dispatcher.middlewares import BaseMiddleware
 from aiogram.types import Message
+
+from config import db
 
 
 # ЭКЗЕМПЛЯРЫ
@@ -10,7 +10,6 @@ from aiogram.types import Message
 class AutoUpdate(BaseMiddleware):
 
     async def on_pre_process_message(self, msg: Message, *args, **kwargs):
-        db = sqlite3.connect('database.db')
         info_user = db.cursor().execute(f'SELECT username, full_name FROM users WHERE id = {msg.from_user.id}').fetchall()
 
         for username, full_name in info_user:
@@ -24,7 +23,5 @@ class AutoUpdate(BaseMiddleware):
             elif full_name != msg.from_user.full_name:
                 db.cursor().execute(f'UPDATE users SET full_name = "{msg.from_user.full_name}" WHERE id = {msg.from_user.id}')
                 db.commit()
-
-        db.close()
 
         return True

@@ -1,24 +1,22 @@
 # БИБЛИОТЕКА ИМПОРТОВ
 
 import aiogram
-import sqlite3
 
-from functions import CheckUser, User
+from functions import UserService
 from states import SendLetter
-from config import dp, dev_list, DEVELOPER
+from config import dp, dev_list, DEVELOPER, db
 
 
 # /START И РЕГИСТРАЦИЯ
 
 @dp.message_handler(commands=['start', 'старт'], state='*')
 async def registration(msg: aiogram.types.Message):
-    if await CheckUser.registration(userid=msg.from_user.id):
+    user = UserService(user=msg.from_user)
+    if await user.check_register():
         await msg.reply('Вы уже зарегистрированы!')
 
     else:
-        info_list = [msg.from_user.id, f'@{msg.from_user.username}', msg.from_user.full_name]
-
-        await User.add_user(info_user=info_list)
+        await user.add_user()
         await msg.reply('<i><b>Добро пожаловать в Anonymous Letters!</b></i>\n\n'
                         'Ознакомиться со всеми командами можно в /help или /commands. Приятного общения!')
         await msg.bot.send_message(chat_id=DEVELOPER,
@@ -32,7 +30,8 @@ async def registration(msg: aiogram.types.Message):
 
 @dp.message_handler(commands=['help', 'commands', 'cmd', 'хелп', 'команды', 'кмд'], state='*')
 async def commands(msg: aiogram.types.Message):
-    if await CheckUser.registration(userid=msg.from_user.id):
+    user = UserService(user=msg.from_user)
+    if await user.check_register():
         await msg.reply('<i><b>Команды:</b></i>\n\n'
                         '- /start : зарегистрироваться ;\n'
                         '- /help(/commands) : посмотреть команды бота ;\n'
@@ -48,7 +47,8 @@ async def commands(msg: aiogram.types.Message):
 
 @dp.message_handler(commands=['info'], state='*')
 async def information(msg: aiogram.types.Message):
-    if await CheckUser.registration(userid=msg.from_user.id):
+    user = UserService(user=msg.from_user)
+    if await user.check_register():
         await msg.reply('<i><b>Информация:</b></i>\n\n'
                         '- «Anonimous Letters» : это бот, позволяющий отправлять анонимные письма другим пользователям. Никто не ограничивает вас в том, что отправлять, '
                         'однако бот принимает только текстовые сообщения. Любовные признания, гневные сообщения или сплетни - всё это вы сможете отправить анонимно, не опасаясь '
@@ -112,12 +112,9 @@ async def answer(msg: aiogram.types.Message):
 
 @dp.message_handler(commands='usend', state='*')
 async def username_send(msg: aiogram.types.Message, state: aiogram.dispatcher.FSMContext):
-    if await CheckUser.registration(userid=msg.from_user.id) and msg.get_args():
-        
-        db = sqlite3.connect('database.db')
+    user = UserService(user=msg.from_user)
+    if await user.check_register() and msg.get_args():
         users = db.cursor().execute('SELECT username, id FROM users').fetchall()
-        db.close()
-
         founded = []
         
         for username, id in users:
@@ -145,14 +142,12 @@ async def username_send(msg: aiogram.types.Message, state: aiogram.dispatcher.FS
 
 @dp.message_handler(commands='isend', state='*')
 async def username_send(msg: aiogram.types.Message, state: aiogram.dispatcher.FSMContext):
-    if await CheckUser.registration(userid=msg.from_user.id) and msg.get_args():
+    user = UserService(user=msg.from_user)
+    if await user.check_register() and msg.get_args():
 
         try:
             user_id = int(msg.get_args())
-
-            db = sqlite3.connect('database.db')
             users = db.cursor().execute('SELECT id FROM users WHERE').fetchall()
-            db.close()
 
             registred_users = [user[0] for user in users]
             

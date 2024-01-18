@@ -1,5 +1,6 @@
 # БИБЛИОТЕКА ИМПОРТОВ
 import os
+import sqlite3
 
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher
@@ -23,3 +24,5 @@ dev_list = [DEVELOPER, OWNER]
 
 bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(bot=bot, storage=MemoryStorage())
+
+db = sqlite3.connect('database.db')
